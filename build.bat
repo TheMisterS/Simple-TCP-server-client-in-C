@@ -1,0 +1,1 @@
+gcc server_multiple.c -o client -l ws2_32
