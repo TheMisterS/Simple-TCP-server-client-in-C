@@ -8,12 +8,16 @@
 #include <iphlpapi.h>
 #include <stdio.h>
 #include <process.h>
+#include <stdatomic.h> //Atomic variables library
 
 #pragma comment(lib, "Ws_32.lib")
 
 #define BUFLEN 512
 #define PORT 27015
 #define ADDRESS "127.0.0.1" //locahost
+
+//global running variable
+_Atomic char running = 0; //default = false
 
 DWORD WINAPI sendThreadFunc(LPVOID lpParam);
 
@@ -57,7 +61,8 @@ int main (){
         return 1;        
     }
 
-
+    printf("Connected to a server %s:%d\n", ADDRESS, PORT);
+    running = !0;
     //************************************************************************************************
 
     // MAIN LOOP ************************************************************************************************
@@ -82,10 +87,14 @@ int main (){
             printf("Received (%d): %s\n", res, recvbuf);           
         }else if(!res){
             printf("Connection closed \n");
+            running = 0;
         }else{
             printf("Receive failed %d\n", WSAGetLastError());
+            running = 0;
         }
-    }while (res > 0);
+    }while (res > 0 && running);
+    running = 0;
+
 
     //connection finished, close thread
     if(CloseHandle(sendThread)){
@@ -114,7 +123,7 @@ DWORD WINAPI sendThreadFunc(LPVOID lpParam){
     char sendBuffer[BUFLEN];
     int sendBufferLength, res;
 
-    while(1){
+    while(running){
         scanf("%s", sendBuffer);
         sendBufferLength = strlen(sendBuffer);
         res = send(client, sendBuffer, sendBufferLength, 0);
@@ -123,6 +132,7 @@ DWORD WINAPI sendThreadFunc(LPVOID lpParam){
             printf("Send failed.");
             break;
         }else if(!memcmp(sendBuffer, "/leave", 6)){
+            running = 0;
             break;
         }
     }

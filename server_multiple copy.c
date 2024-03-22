@@ -194,28 +194,29 @@ int main(){
                         printf("Client [%s:%d] sent (%d bytes): %s\n", clientIP, clientPort, res, recvbuf);
                         
                         //test if quit command
-                        if(!memcmp(recvbuf, "/quit", 5 * sizeof(char))){ //quit command
+                        if(!memcmp(recvbuf, "/quit", 5 * sizeof(char))){
                             running = 0;
                             break;
                         }
-                        else if(!memcmp(recvbuf, "/info", 5 * sizeof(char))){ //info command
+
+                        if(!memcmp(recvbuf, "/info", 5 * sizeof(char))){
                             sendInfo(sd);
-                        } 
-                        else if(!memcmp(recvbuf, "/random", 7 * sizeof(char))){ //randoom command
+                        }
+                        
+                        if(!memcmp(recvbuf, "/random", 7 * sizeof(char))){
                             sendRandom(sd);
                         }                                             
-                        //echo message to all other clients
-                        else{ 
-                            for(int j = 0; j < MAX_CLIENTS; ++j){
-                                if(clients[j] > 0 && clients[j] != sd){ //check if the client is connected and is not the sender
-                                    sendRes = send(clients[j], recvbuf, res, 0);
-                                    if(sendRes == SOCKET_ERROR){
-                                        printf("Broadcast failed: %d\n", WSAGetLastError());
-                                        shutdown(clients[j], SD_BOTH);
-                                        closesocket(clients[j]);
-                                        clients[j] = 0; //remove client from the array
-                                        curNoClients--;
-                                    }
+
+                        //echo message
+                        for(int j = 0; j < MAX_CLIENTS; ++j){
+                            if(clients[j] > 0 && clients[j] != sd){ // Check if the client is connected and is not the sender
+                                sendRes = send(clients[j], recvbuf, res, 0);
+                                if(sendRes == SOCKET_ERROR){
+                                    printf("Broadcast failed: %d\n", WSAGetLastError());
+                                    shutdown(clients[j], SD_BOTH);
+                                    closesocket(clients[j]);
+                                    clients[j] = 0; // Remove client from the array
+                                    curNoClients--;
                                 }
                             }
                         }
